@@ -1,54 +1,150 @@
-# For workshop <(中文) Easy Fintune LLM using SageMaker Notebook - Training Job- HyperPod with LLama-Factory>
+### LLaMA Factory Project
 
-## Introduction
-- LLaMA-Factory is an open-source community framework for large model integration and training. AWS SageMaker is a comprehensive machine learning platform within Amazon Web Services (AWS). It provides a simple and efficient way to build, train, and deploy machine learning models. SageMaker Training Job is one of the core features of this platform for training machine learning models.
+참고자료 
+1. [LLaMA Factory-HyperPod Document](https://aws.amazon.com/cn/blogs/china/easily-fine-tune-large-models-using-llama-factory-on-sagemaker-hyperpod/)
+2. [LLaMA Factory-HyperPod Github](https://github.com/mz-heesun/Easy_Fintune_LLM_using_SageMaker_with_LLama_Factory)
+3. [LLaMA Factory Github](https://github.com/hiyouga/LLaMA-Factory)
+4. [HyperPod Instance type, pricing](https://aws.amazon.com/ko/sagemaker/pricing/)
 
-- In this workshop, it demostrate the method and process of fintuning LLama-3 using SageMaker Training Job with LLama-Factory under the hood.  
-    1. QLora SFT in SageMaker Notebook with Single GPU 
-    2. Deploy Finetune Lora Adpaters in SageMaker Notebook 
-    3. Deploy Finetune Lora Adpaters in SageMaker Endpoint with Lmi-vllm engine 
-    4. Finetune in SageMaker Training Job distributed in Multi Nodes and Multi GPUs 
-    5. Setup HyperPod cluster and finetune in Hyperpod cluster
 
-### SageMaker Introduction
-SageMaker Training Job works by running training jobs on AWS cloud resources, utilizing the computing power of Amazon EC2 instances to execute the training process. Users can choose to use built-in SageMaker algorithms or bring their own algorithms to train models.
+목적 
+- LLaMA Factory 프로젝트를 사용하여 HyperPod를 통한 모델 학습을 진행하는 프로젝트
 
-- The main advantages of using SageMaker for training large language models:
-    - High-performance GPU instances to meet the demands of large model training, with better performance and scalability than on-premises data centers.
-    - Support for distributed training, parallelizing training across multiple GPU instances to significantly improve training speed.
-    - Pre-built deep learning container images with optimized frameworks and libraries to accelerate the training process.
-    - Integration with Amazon S3 for convenient storage and access to large-scale training data.
-    - Monitoring and debugging tools to monitor the training process in real-time, record metrics and logs.
-    - Cloud environment provides multi-layered security protection, compliant with various industry standards.
+주의사항
+- M1 MacOS에서 실행한 내용입니다.
+- 참고자료[2] 의 내용을 기준으로 새롭게 작성하였습니다.
+- 우리 상황에 알맞게 코드를 수정하였습니다.
+- Mulit GPU를 사용하려면 P5, P4, Trn1 타입 인스턴스를 사용해야합니다.
+- Single GPU는 g5 계열을 사용합니다
+- Intel Chipset은 t3, m5, c5 계열을 사용합니다.
 
-### LLaMA-Factory Introduction
-- LLaMA-Factory is an open-source community framework for large model integration and training, supporting:
-    - Various models: LLaMA, LLaVA, Mistral, Mixtral-MoE, Qwen, Yi, Gemma, Baichuan, ChatGLM, Phi, and more.
-    - Integration methods: (incremental) pre-training, (multimodal) instructional supervised fine-tuning, reward model training, PPO training, DPO training, KTO training, ORPO training, and more.
-    - Multiple precisions: 32-bit full parameter fine-tuning, 16-bit frozen fine-tuning, 16-bit LoRA fine-tuning, and 2/4/8-bit QLoRA fine-tuning based on AQLM/AWQ/GPTQ/LLM.int8.
-    - Advanced algorithms: GaLore, BAdam, DoRA, LongLoRA, LLaMA Pro, Mixture-of-Depths, LoRA+, LoftQ, and Agent fine-tuning.
-- Therefore, LLaMA-Factory, combined with SageMaker, can also be applied to other models and training methods, fully leveraging SageMaker's managed services. This eliminates the need to worry about resource system configuration and allows training tasks to be launched on-demand. After training is complete, node resources are automatically released, avoiding long-term resource occupation and providing a more convenient and economical training experience.
 
-### Experiment Objectives
-- Familiarize yourself with using LLaMA-Factory on SageMaker Notebook for QLora SFT training and inference.
-- Familiarize yourself with using SageMaker Training Job based on LLaMA-Factory for multi-node multi-GPU training.
-- Familiarize yourself with using SageMaker LMI container to deploy Lora models and provide high-performance real-time inference.
-- Familiarize yourself with setting up a SageMaker HyperPod cluster and using LLaMA-Factory for multi-node multi-GPU training on the cluster.
+## 선수작업
+AWS Configure Setting
+- 프로파일 생성
+```shell
+aws configure --profile 생성할_profile_name
+```
+- 프로파일 목록 확인
+```shell
+aws configure list-profiles
+'''
+default
+atomy
+shinhan-mycar
+source-account
+target-account
+pentacle
+'''
+```
+- 생성한 프로파일 선택
+```shell
+export AWS_PROFILE=생성한_profile_name
+# export AWS_PROFILE=pentacle
+```
 
-## Prerequisites
-- Some experience with AWS
-- Basic experience with Linux environments
-- Basic experience with Python and Jupyter Notebook
+---
 
-## Target Audience
-- Algorithm/Software Engineers
-- Algorithm/Software Architects
+### 기본 버킷 생성
+```shell
+export BUCKET=사용하고싶은_bucket_name
+export REGION=사용하고싶은 region
+# export BUCKET=sagemaker-us-east-2-529075693336-2
+# export REGION=us-east-2
+```
+role 생성
+```shell
+aws iam create-role --role-name LLaMAFactoryS3Role --assume-role-policy-document file://$(pwd)/policies/trust_policy.json
+aws iam put-role-policy --role-name LLaMAFactoryS3Role --policy-name S3PutObjectPolicy --policy-document file://$(pwd)/policies/bucket_policy.json
+```
 
-## Security
+s3 생성
+```shell
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+aws s3api create-bucket --bucket ${BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
+aws s3api put-bucket-policy --bucket ${BUCKET} --policy file://$(pwd)/policies/put_bucket_policy.json
+#aws s3api put-bucket-policy --bucket ${BUCKET} --policy file://$(pwd)/bucket_policy.json
+```
 
-## License
+### lifecycle-scripts 업로드
+```shell
+aws s3 cp —recursive lifecycle-scripts/ s3://${BUCKET}/hyperpod/LifecycleScripts/
+```
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+### HyperPod Cluster 생성
+```shell
+# Single GPU Version
+# 해당 파일을 열어 cluster name을 가져올 것 
+aws sagemaker create-cluster --cli-input-json file://$(pwd)/create_cluster_single_gpu.json
+# 15분정도 생성시간이 소요됨.
+# Multi GPU Version
+# aws sagemaker create-cluster --cli-input-json ./create_cluster_multi_gpu.json
+```
+
+업로드 LLaMA Factory Source, Resources
+```shell
+# ./s5cmd sync ./LLaMA-Factory s3://${BUCKET}/hyperpod/
+aws s3 cp --recursive hyperpod-scripts/ s3://${BUCKET}/hyperpod/LLaMA-Factory/
+aws s3 cp --recursive LLaMA-Factory/data s3://${BUCKET}/dataset-for-training/train/
+```
+
+### HyperPod Cluster에 대한 원격 엑세스 설정
+[SSM 설치](https://docs.aws.amazon.com/ko_kr/systems-manager/latest/userguide/install-plugin-macos-overview.html)
+```shell
+#m1 apple
+curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac_arm64/sessionmanager-bundle.zip" -o "sessionmanager-bundle.zip"
+unzip sessionmanager-bundle.zip
+sudo ./sessionmanager-bundle/install -i /usr/local/sessionmanagerplugin -b /usr/local/bin/session-manager-plugin
+./sessionmanager-bundle/install -h
+```
+
+jq 설치 
+```shell
+brew install jq
+```
+
+HyperPod Cluster 에 접속
+```shell
+chmod +x easy-ssh.sh
+./easy-ssh.sh -c worker-group-1 hyperpod-cluster-2
+```
+
+### HpyerPod 클러스터 환경 설정
+
+
+Mount S3
+```shell
+#export BUCKET=사용하고싶은_bucket_name
+export BUCKET=sagemaker-us-east-2-529075693336-2
+
+srun -N2 "wget" "https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb"
+srun -N2 "sudo" "apt-get" "install" "-y"  "./mount-s3.deb"
+
+srun -N2 "sudo" "mkdir" "/home/ubuntu/mnt"
+# srun -N2 "sudo" "umount" "/home/ubuntu/mnt"
+srun -N2 "sudo" "mount-s3" "--allow-other" "--allow-overwrite" ${BUCKET} "/home/ubuntu/mnt"
+```
+
+### LLaMA Factory HyperPod로 복사 
+```shell
+srun -N2 "cp" "-rf" "/home/ubuntu/mnt/hyperpod/LLaMA-Factory" "LLaMA-Factory"
+```
+
+### LLaMA Factory 환경 설치 
+```shell
+cd /usr/bin/LLaMA-Factory
+srun -N2 "rm" "-rf" "../miniconda3"
+srun -N2 "rm" "-rf" "Miniconda3-latest*"
+srun -N2 "bash" "/home/ubuntu/mnt/hyperpod/LLaMA-Factory/llama_factory_setup.sh"
+```
+
+wandb
+```shell
+export WANDB_API_KEY=사용하고싶은 wandb api key
+```
+
+### LLaMA Factory 훈련 시작
+```shell
+srun -N2 "bash" "/home/ubuntu/mnt/hyperpod/LLaMA-Factory/train_single_lora.sh"
+```
 

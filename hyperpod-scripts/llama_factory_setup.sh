@@ -11,6 +11,6 @@ conda create -y -n py310  python=3.10
 source activate py310
 
 pip install --no-deps -e .
-pip install -r requirements.txt
 pip install torch==2.2.0
+pip install -r requirements.txt
 chmod +x ./s5cmd

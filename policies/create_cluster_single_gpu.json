@@ -1,0 +1,27 @@
+{
+  "ClusterName": "hyperpod-cluster-2",
+  "InstanceGroups": [
+    {
+      "InstanceGroupName": "my-controller-group",
+      "InstanceType": "ml.c5.xlarge",
+      "InstanceCount": 1,
+      "LifeCycleConfig": {
+        "SourceS3Uri": "s3://sagemaker-us-east-2-529075693336-1/hyperpod/LifecycleScripts",
+        "OnCreate": "on_create.sh"
+      },
+      "ExecutionRole": "arn:aws:iam::529075693336:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole",
+      "ThreadsPerCore": 1
+    },
+    {
+      "InstanceGroupName": "worker-group-1",
+      "InstanceType": "ml.g5.16xlarge",
+      "InstanceCount": 2,
+      "LifeCycleConfig": {
+        "SourceS3Uri": "s3://sagemaker-us-east-2-529075693336-1/hyperpod/LifecycleScripts",
+        "OnCreate": "on_create.sh"
+      },
+      "ExecutionRole": "arn:aws:iam::529075693336:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole",
+      "ThreadsPerCore": 1
+    }
+  ]
+}

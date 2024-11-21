@@ -1,0 +1,13 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::529075693336:role/LLaMAFactoryS3Role"
+      },
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::sagemaker-us-east-2-529075693336-2/*"
+    }
+  ]
+}
