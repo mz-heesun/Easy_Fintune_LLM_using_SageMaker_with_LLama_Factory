@@ -86,6 +86,7 @@ aws sagemaker create-cluster --cli-input-json file://$(pwd)/create_cluster_singl
 # ./s5cmd sync ./LLaMA-Factory s3://${BUCKET}/hyperpod/
 aws s3 cp --recursive hyperpod-scripts/ s3://${BUCKET}/hyperpod/LLaMA-Factory/
 aws s3 cp --recursive LLaMA-Factory/data s3://${BUCKET}/dataset-for-training/train/
+aws s3 cp --recursive training-data/ s3://${BUCKET}/dataset-for-training/train/
 ```
 
 ### HyperPod Cluster에 대한 원격 엑세스 설정
