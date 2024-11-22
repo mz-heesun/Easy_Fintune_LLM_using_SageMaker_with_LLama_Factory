@@ -1,3 +1,4 @@
+import argparse
 import time
 
 import boto3
@@ -56,8 +57,7 @@ def setup_model(s3_code_prefix: str, default_bucket):
     print(f"사용하게 될 inference IMAGE URI ---- > {inference_image_uri}")
     s3_code_artifact = sess.upload_data("model.tar.gz", default_bucket, s3_code_prefix)
     print(f"S3에 모델, tar파일이 업로드됨 --- > {s3_code_artifact}")
-    model_name = name_from_base(f"llama3-8b-qlora").replace('.', '-').replace('_', '-')
-    return (inference_image_uri, s3_code_artifact, model_name)
+    return (inference_image_uri, s3_code_artifact)
 
 
 def create_model(inference_image_uri, s3_code_artifact):
@@ -75,6 +75,10 @@ def create_model(inference_image_uri, s3_code_artifact):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Deploy model to SageMaker")
+    parser.add_argument("--model_name", type=str, required=True, help="Name of the model to deploy")
+    args = parser.parse_args()
+
     # setup
     sess = sagemaker.session.Session()
     iam_client = boto3.client('iam')
@@ -93,9 +97,11 @@ if __name__ == "__main__":
     print(f"Region: {region}")
     print(f"Account ID: {account_id}")
 
+    model_name = name_from_base(args.model_name).replace('.', '-').replace('_', '-')
+
     # 모델을 생성하기 전에 훈련된 내용을 가지고 모델파일을 만들어줘야합니다.
     s3_code_prefix = "llm_finetune/llama-3-8b-qlora"
-    (inference_image_uri, s3_code_artifact, model_name) = setup_model(s3_code_prefix, default_bucket)
+    (inference_image_uri, s3_code_artifact) = setup_model(s3_code_prefix, default_bucket)
 
     # 모델 생성
     train_model = create_model(inference_image_uri, s3_code_artifact)

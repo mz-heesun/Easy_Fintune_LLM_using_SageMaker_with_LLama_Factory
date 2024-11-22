@@ -9,10 +9,12 @@ pip install tyro==0.8.5
 # pip install protobuf==3.20.1
 
 # pip list
-cat /home/ubuntu/mnt/hyperpod/LLaMA-Factory/sg_config_qlora.yaml
+# cat /home/ubuntu/mnt/hyperpod/LLaMA-Factory/sg_config_qlora.yaml
 
 #download training dataset
 ./s5cmd sync s3://sagemaker-us-east-2-529075693336-2/dataset-for-training/train/* /home/ubuntu/mnt/hyperpod/LLaMA-Factory/data/
+
+# cat /home/ubuntu/mnt/hyperpod/LLaMA-Factory/data/dataset_info.json
 
 export WANDB_API_KEY=df97535b6e183d5da1d1d01803ea1ac0bd583eb3
 #start train

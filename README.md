@@ -60,7 +60,6 @@ aws iam put-role-policy --role-name LLaMAFactoryS3Role --policy-name S3PutObject
 
 s3 생성
 ```shell
-
 aws s3api create-bucket --bucket ${BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
 aws s3api put-bucket-policy --bucket ${BUCKET} --policy file://$(pwd)/policies/put_bucket_policy.json
 #aws s3api put-bucket-policy --bucket ${BUCKET} --policy file://$(pwd)/bucket_policy.json
@@ -68,7 +67,7 @@ aws s3api put-bucket-policy --bucket ${BUCKET} --policy file://$(pwd)/policies/p
 
 ### lifecycle-scripts 업로드
 ```shell
-aws s3 cp —recursive lifecycle-scripts/ s3://${BUCKET}/hyperpod/LifecycleScripts/
+aws s3 cp --recursive lifecycle-scripts/ s3://${BUCKET}/hyperpod/LifecycleScripts/
 ```
 
 ### HyperPod Cluster 생성
@@ -84,8 +83,10 @@ aws sagemaker create-cluster --cli-input-json file://$(pwd)/create_cluster_singl
 업로드 LLaMA Factory Source, Resources
 ```shell
 # ./s5cmd sync ./LLaMA-Factory s3://${BUCKET}/hyperpod/
+aws s3 cp ./s5cmd s3://${BUCKET}/hyperpod/LLaMA-Factory/
+aws s3 cp --recursive LLaMA-Factory/ s3://${BUCKET}/hyperpod/LLaMA-Factory/
 aws s3 cp --recursive hyperpod-scripts/ s3://${BUCKET}/hyperpod/LLaMA-Factory/
-aws s3 cp --recursive LLaMA-Factory/data s3://${BUCKET}/dataset-for-training/train/
+#aws s3 cp --recursive LLaMA-Factory/data s3://${BUCKET}/dataset-for-training/train/
 aws s3 cp --recursive training-data/ s3://${BUCKET}/dataset-for-training/train/
 ```
 
@@ -128,7 +129,11 @@ srun -N2 "sudo" "mount-s3" "--allow-other" "--allow-overwrite" ${BUCKET} "/home/
 
 ### LLaMA Factory HyperPod로 복사 
 ```shell
+# cd /usr/bin
 srun -N2 "cp" "-rf" "/home/ubuntu/mnt/hyperpod/LLaMA-Factory" "LLaMA-Factory"
+# cd /usr/bin/LLaMA-Factory
+srun -N2 "cp" "-rf" "/home/ubuntu/mnt/dataset-for-training/train" "./"
+#cp -rf /home/ubuntu/mnt/dataset-for-training/train/* ./data
 ```
 
 ### LLaMA Factory 환경 설치 
@@ -147,5 +152,7 @@ export WANDB_API_KEY=사용하고싶은 wandb api key
 ### LLaMA Factory 훈련 시작
 ```shell
 srun -N2 "bash" "/home/ubuntu/mnt/hyperpod/LLaMA-Factory/train_single_lora.sh"
+# srun -N2 "cat" "./data/restaurant-review.json"
+# srun -N2 "cat" "/home/ubuntu/mnt/dataset-for-training/train/restaurant-review.json"
 ```
 
