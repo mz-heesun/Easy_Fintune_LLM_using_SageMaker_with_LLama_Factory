@@ -5,6 +5,13 @@
   "restaurant": {
     "file_name": "restaurant-review.json"
   },
+  "klue": {
+    "hf_hub_url": "klue/klue",
+    "task": "ner",
+    "columns": {
+      "prompt": "text"
+    }
+  },
   "alpaca_en_demo": {
     "file_name": "alpaca_en_demo.json"
   },

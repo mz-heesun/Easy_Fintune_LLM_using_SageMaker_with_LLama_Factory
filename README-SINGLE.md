@@ -2,7 +2,7 @@
 
 참고자료 
 1. [LLaMA Factory-HyperPod Document](https://aws.amazon.com/cn/blogs/china/easily-fine-tune-large-models-using-llama-factory-on-sagemaker-hyperpod/)
-2. [LLaMA Factory-HyperPod Github](https://github.com/mz-heesun/Easy_Fintune_LLM_using_SageMaker_with_LLama_Factory)
+2. [LLaMA Factory-HyperPod Github](https://github.com/aws-samples/Easy_Fintune_LLM_using_SageMaker_with_LLama_Factory)
 3. [LLaMA Factory Github](https://github.com/hiyouga/LLaMA-Factory)
 4. [HyperPod Instance type, pricing](https://aws.amazon.com/ko/sagemaker/pricing/)
 

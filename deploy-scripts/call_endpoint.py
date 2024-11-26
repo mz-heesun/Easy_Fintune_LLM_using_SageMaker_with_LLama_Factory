@@ -18,8 +18,7 @@ if __name__ == "__main__":
     }
 
     messages = [
-        {"role": "system", "content": ""
-                                      "입력되는 글을 바탕으로 해당 가맹점의 특정과 트랜드를 잘 표현하는 태그 3개 만들어줘."
+        {"role": "system", "content": "입력되는 글을 바탕으로 해당 가맹점의 특정과 트랜드를 잘 표현하는 태그 3개 만들어줘.(반드시 한국말로 대답해줘)"
                                       "1. #으로 시작할 것"
                                       "2. 단어일 것"
                                       "3. 최대 3개까지만 입력할 것"
@@ -44,4 +43,5 @@ if __name__ == "__main__":
 
     # for event in invoke_response['Body']:
     #     print(event.decode('utf-8'))
+    print(messages)
     print(json.loads(invoke_response["Body"].read().decode("utf-8"))['choices'])

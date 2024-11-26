@@ -1,8 +1,9 @@
-model_name_or_path: Qwen/Qwen2.5-Coder-7B-Instruct
+model_name_or_path: EleutherAI/polyglot-ko-1.3b
 stage: sft
 do_train: true
 finetuning_type: lora
 lora_target: all
+dataset_dir: /home/ubuntu/mnt/hyperpod/LLaMA-Factory/data
 dataset: restaurant
 template: alpaca
 cutoff_len: 4096
@@ -17,7 +18,7 @@ overwrite_output_dir: true
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 8
 learning_rate: 0.0002
-num_train_epochs: 15.0
+num_train_epochs: 10
 lr_scheduler_type: cosine
 warmup_ratio: 0.1
 fp16: true
